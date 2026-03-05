@@ -1,7 +1,9 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
 //users table schema-----------
-const users = sqliteTable("users",{
+// use "export" to make tables visible to the rest of the project
+
+export const users = sqliteTable("users",{
     // left side of : sign, is the name of the column we will use on 
     // typescript code (which named as "key") and
     // on the right hand side of : sign, we declared integer("id") then id is the column name
@@ -11,13 +13,13 @@ const users = sqliteTable("users",{
 })
 
 //threads table schema--------
-const threads = sqliteTable("threads",{
+export const threads = sqliteTable("threads",{
     threadID: integer("id").primaryKey(),
     threadName: text("threadName").notNull(),
 })
 
 //messages table schema-------
-const messages = sqliteTable("messages",{
+export const messages = sqliteTable("messages",{
     messageID: integer("messageID").primaryKey(),
     contentOfMessage: text("contentOfMessage").notNull(),
     //if you want to return the exactly same thing which is on the right hand

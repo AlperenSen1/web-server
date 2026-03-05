@@ -9,6 +9,36 @@ const app = new Hono();
 //This function contains the instructions for what happens when a user visits that path.
 // c is a parameter for arrow function, which is "Context" class object that is created by Hono framework automatically.
 
+//this is the homepage section-------------------------------------------------------
+
+//this is route 
 app.get("/",(c)=>{
-  return c.text("This is homepage")
+  return c.text("This is homepage.")
 })
+
+//this is the users section-----------------------------------------------------------
+app.get("/users",(c)=>{
+  return c.json({
+    status : "This is users endpoint"
+  })
+})
+
+
+// this is threads section-------------------------------------------------------------
+app.get("/threads", (c)=>{
+  return c.text("This is threads page")
+})
+
+
+//this is messages section-------------------------------------------------------------
+app.get("/messages", (c)=>{
+  return c.text("This is messages page")
+})
+
+
+
+
+// says to bun : app object is the one you should use to listen for web traffic.
+export default app;
+
+//API ucu= API Endpoint

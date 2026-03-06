@@ -1,6 +1,13 @@
 // import Hono class from hono package which is installed from internet.
 import { Hono } from "hono"
 
+// i wrote ../ at the beginning of the path becasue that ./
+//  means "Look inside my current folder" and  ../ means "go up one level".
+
+import { db } from "../db"
+import { users } from "../db/schema"
+
+
 // Create a Hono class object named app. 
 const app = new Hono(); 
 
@@ -16,11 +23,11 @@ app.get("/",(c)=>{
   return c.text("This is homepage.")
 })
 
-//this is the users section-----------------------------------------------------------
-app.get("/users",(c)=>{
-  return c.json({
-    status : "This is users endpoint"
-  })
+//this is the users section, "async" just before (c) parameter is for allowing function to
+// pause while it waits for the database ------------------------------------------
+app.get("/users", async(c)=>{
+  const allUsers = await db.select().from(users)
+  return c.json(allUsers)
 })
 
 

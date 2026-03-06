@@ -10,18 +10,18 @@ bun run dev
 
 open http://localhost:3000
 
-I started project on cmd, firstly i go to the my C:/projects folder then run this command:
+I started project on cmd, firstly i went to my C:/projects folder then ran this command:
 "bun create hono@latest web-server"
 
-then go to the C:/projects/web-server and run the following command, however it(what bun install  command installs) was already installed after the first command which is stated above.
+then i went to  C:/projects/web-server and ran the following command, however it(what bun install  command installs) was already installed after the first command which is stated above.
 "bun install"
 
-Drizzle ORM allows to write TypeScript code to define tables and make queries. Drizzle translates that TypeScript into SQL
+Drizzle ORM allows writing TypeScript code to define tables and make queries. Drizzle translates that TypeScript into SQL
 
-after creating schema.ts and drizzle.config.ts files i run following command(bunx means install and execute)
+after creating schema.ts and drizzle.config.ts files i ran following command(bunx means install and execute):
 bunx drizzle-kit push 
 
-i got an driver error and the solution is the following, then i run the bunx command again
+i got a driver error and the solution was the following, then i ran the bunx command again:
 bun add -d better-sqlite3
 
-finally there is databse.sqlite file
+finally there was databse.sqlite file

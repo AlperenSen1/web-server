@@ -68,10 +68,19 @@ app.post("/messages", async(c)=>{
   // is to covert local hour to Z(zulu time UTC+0) and .toISO() converts the data into string 
   // because sqlite want it as string. 
   const currentTime = DateTime.now().toUTC().toISO()
+
+  //destructuring
+  const {contentOfMessage,userID,threadID} = body
+
   await db.insert(messages).values({
-    contentOfMessage: body.contentOfMessage,
-    userID: body.userID,
-    threadID: body.threadID,
+    //before destructuring => contentOfMessage: body.contentOfMessage,
+    //if the key and value have the exact same name, then writing only one is
+    //more appropriate than that => contentOfMessage : contentOfMessage,
+    contentOfMessage,
+    //userID: body.userID,
+    userID,
+    //threadID: body.threadID,
+    threadID,
     sendingTime: currentTime
   })
   return c.json({message: "Message Successfully Created"},201)

@@ -7,6 +7,9 @@ import { Hono } from "hono"
 import { db } from "../db"
 import { users, threads, messages } from "../db/schema"
 
+//datetime object from luxon package
+import { DateTime } from "luxon";
+
 
 // Create a Hono class object named app. 
 const app = new Hono(); 
@@ -61,7 +64,10 @@ app.get("/messages", async(c)=>{
 
 app.post("/messages", async(c)=>{
   const body = await c.req.json()
-  const currentTime = new Date().toISOString()
+  //DateTime is luxon object, .now() is to detect exact time when "post" was send, .toUTC() 
+  // is to covert local hour to Z(zulu time UTC+0) and .toISO() converts the data into string 
+  // because sqlite want it as string. 
+  const currentTime = DateTime.now().toUTC().toISO()
   await db.insert(messages).values({
     contentOfMessage: body.contentOfMessage,
     userID: body.userID,

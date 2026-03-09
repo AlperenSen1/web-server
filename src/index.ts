@@ -8,7 +8,10 @@ import { db } from "../db"
 import { users, threads, messages } from "../db/schema"
 
 //datetime object from luxon package
-import { DateTime } from "luxon";
+import { DateTime } from "luxon"
+
+//equal
+import { eq } from "drizzle-orm"
 
 
 // Create a Hono class object named app. 
@@ -41,6 +44,21 @@ app.post("/users", async(c)=>{
   const body = await c.req.json()
   await db.insert(users).values({ userName:body.userName })
   return c.json({message:"User Successfully Created"},201)
+})
+
+//searching for a specific user by userID and error handling(404)
+// colon(:) means this part of the URL is a dynamic variable that the user will type in.
+app.get("/users/:id",async(c)=>{
+  //grab id part of URL as a number
+  const targetid = Number(c.req.param("id"))
+  const result = await db.select().from(users).where(eq(targetid, users.userID))
+
+  //no need () to .length
+  if(result.length==0){
+    return c.json({message:"User not found"},404)
+  }else{
+    return c.json(result[0],200)
+  }
 })
 
 

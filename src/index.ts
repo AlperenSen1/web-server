@@ -12,6 +12,7 @@ import { DateTime } from "luxon";
 
 //equal
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 // Create a Hono class object named app.
 const app = new Hono();
@@ -45,6 +46,8 @@ app.post("/users", async (c) => {
   return c.json({ message: "User Successfully Created" }, 201);
 });
 
+const idSchema = z.coerce.number().int().positive();
+
 //searching for a specific user by userID and error handling(404)
 // colon(:) means this part of the URL is a dynamic variable that the user will type in.
 app.get("/users/:id", async (c) => {
@@ -53,7 +56,12 @@ app.get("/users/:id", async (c) => {
   //param() is a function inside req folder, it looks URL and extracts information typed
   // on placeholder location. Number() converts extracted information's type from string
   // to integer.
-  const targetid = Number(c.req.param("id"));
+
+  const validation = idSchema.safeParse(c.req.param("id"));
+  if (!validation.success) {
+    return c.json({ error: validation.error.format() }, 400);
+  }
+  const targetid = validation.data;
 
   const result = await db
 
@@ -91,19 +99,23 @@ app.get("/messages", async (c) => {
   return c.json(allMessages);
 });
 
+// this is zod schema where i define the message sending by user must looks like. it is outside of app.post
+const messageSchema = z.object({
+  contentOfMessage: z.string().min(1),
+  //you must start with javascript data types(string,number,boolean) when defining rules then add mathematicals
+  userID: z.number().int().positive(),
+  threadID: z.number().int().positive(),
+});
+
 app.post("/messages", async (c) => {
   const body = await c.req.json();
 
-  //destructuring
-  const { contentOfMessage, userID, threadID } = body;
-
-  //error handling
-  if (!contentOfMessage || !userID || !threadID) {
-    return c.json(
-      { error: "Missing required fields: content, userID, or threadID" },
-      400,
-    );
+  //Inspect the body using blueprint.
+  const validation = messageSchema.safeParse(body);
+  if (!validation.success) {
+    return c.json({ error: validation.error.format() }, 400);
   }
+  const { contentOfMessage, userID, threadID } = validation.data;
 
   //500 error try-catch block
   try {

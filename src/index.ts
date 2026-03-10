@@ -29,7 +29,7 @@ app.get("/",(c)=>{
   return c.text("This is homepage.")
 })
 
-//this is the users section------------------------------------------------------
+//this is users section------------------------------------------------------
 // "async" just before (c) parameter is for allowing function to
 // pause while it waits for the database 
 //Whenever you ask the database to do something (like read, write, or delete), you must use
@@ -49,14 +49,25 @@ app.post("/users", async(c)=>{
 //searching for a specific user by userID and error handling(404)
 // colon(:) means this part of the URL is a dynamic variable that the user will type in.
 app.get("/users/:id",async(c)=>{
-  //grab id part of URL as a number
+
+  //grab id part of URL as a number and "id" is placeholder. "req" is "request" folder that 
+  // holds information about what user asked for, headers, IP address, JSON body.
+  //param() is a function inside req folder, it looks URL and extracts information typed 
+  // on placeholder location. Number() converts extracted information's type from string 
+  // to integer. 
   const targetid = Number(c.req.param("id"))
+
   const result = await db.select().from(users).where(eq(targetid, users.userID))
 
-  //no need () to .length
+  //no need () to .length. result is an array and if its length is zero then:
   if(result.length==0){
     return c.json({message:"User not found"},404)
   }else{
+    //databse returns an array when you asked for a user. This array consists of only one 
+    // object which is the user information that requested. However we dont give it to the 
+    // frontend as array, we extract the object from array and then give it to frontend. 
+    // this is why result[0] is exists and there is no result[1], databese returns only 
+    // the requested information inside an array.
     return c.json(result[0],200)
   }
 })
@@ -82,14 +93,23 @@ app.get("/messages", async(c)=>{
 
 app.post("/messages", async(c)=>{
   const body = await c.req.json()
-  //DateTime is luxon object, .now() is to detect exact time when "post" was send, .toUTC() 
-  // is to covert local hour to Z(zulu time UTC+0) and .toISO() converts the data into string 
-  // because sqlite want it as string. 
-  const currentTime = DateTime.now().toUTC().toISO()
+
 
   //destructuring
   const {contentOfMessage,userID,threadID} = body
 
+  //error handling
+  if(!contentOfMessage || !userID || !threadID){
+    return c.json({error:"Missing required fields: content, userID, or threadID"},400)
+  }
+
+  //500 error try-catch block
+  try{
+  //DateTime is luxon object, .now() is to detect exact time when "post" was send, .toUTC() 
+  // is to covert local hour to Z(zulu time UTC+0) and .toISO() converts the data into string 
+  // because sqlite want it as string. 
+  const currentTime = DateTime.now().toUTC().toISO()
+  
   await db.insert(messages).values({
     //before destructuring => contentOfMessage: body.contentOfMessage,
     //if the key and value have the exact same name, then writing only one is
@@ -102,6 +122,9 @@ app.post("/messages", async(c)=>{
     sendingTime: currentTime
   })
   return c.json({message: "Message Successfully Created"},201)
+    }catch(error){
+  c.json({error:"Internal server error"},500)
+    }
 })
 
 

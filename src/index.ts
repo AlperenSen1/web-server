@@ -1,21 +1,20 @@
 // import Hono class from hono package which is installed from internet.
-import { Hono } from "hono"
+import { Hono } from "hono";
 
 // i wrote ../ at the beginning of the path becasue that ./
 //  means "Look inside my current folder" and  ../ means "go up one level".
 
-import { db } from "../db"
-import { users, threads, messages } from "../db/schema"
+import { db } from "../db";
+import { users, threads, messages } from "../db/schema";
 
 //datetime object from luxon package
-import { DateTime } from "luxon"
+import { DateTime } from "luxon";
 
 //equal
-import { eq } from "drizzle-orm"
+import { eq } from "drizzle-orm";
 
-
-// Create a Hono class object named app. 
-const app = new Hono(); 
+// Create a Hono class object named app.
+const app = new Hono();
 
 //get function takes two parameters first one is the URL, second one is a function. get(URL,Arrow Function)
 //we are defining this function(arrow function) by using (parameter)=>{the body}
@@ -24,110 +23,111 @@ const app = new Hono();
 
 //this is the homepage section-------------------------------------------------------
 
-//this is route 
-app.get("/",(c)=>{
-  return c.text("This is homepage.")
-})
+//this is route
+app.get("/", (c) => {
+  return c.text("This is homepage.");
+});
 
 //this is users section------------------------------------------------------
 // "async" just before (c) parameter is for allowing function to
-// pause while it waits for the database 
+// pause while it waits for the database
 //Whenever you ask the database to do something (like read, write, or delete), you must use
 //await to force the JavaScript engine to pause and wait for the physical hard drive to
 //finish its job
-app.get("/users", async(c)=>{
-  const allUsers = await db.select().from(users)
-  return c.json(allUsers)
-})
+app.get("/users", async (c) => {
+  const allUsers = await db.select().from(users);
+  return c.json(allUsers);
+});
 
-app.post("/users", async(c)=>{
-  const body = await c.req.json()
-  await db.insert(users).values({ userName:body.userName })
-  return c.json({message:"User Successfully Created"},201)
-})
+app.post("/users", async (c) => {
+  const body = await c.req.json();
+  await db.insert(users).values({ userName: body.userName });
+  return c.json({ message: "User Successfully Created" }, 201);
+});
 
 //searching for a specific user by userID and error handling(404)
 // colon(:) means this part of the URL is a dynamic variable that the user will type in.
-app.get("/users/:id",async(c)=>{
-
-  //grab id part of URL as a number and "id" is placeholder. "req" is "request" folder that 
+app.get("/users/:id", async (c) => {
+  //grab id part of URL as a number and "id" is placeholder. "req" is "request" folder that
   // holds information about what user asked for, headers, IP address, JSON body.
-  //param() is a function inside req folder, it looks URL and extracts information typed 
-  // on placeholder location. Number() converts extracted information's type from string 
-  // to integer. 
-  const targetid = Number(c.req.param("id"))
+  //param() is a function inside req folder, it looks URL and extracts information typed
+  // on placeholder location. Number() converts extracted information's type from string
+  // to integer.
+  const targetid = Number(c.req.param("id"));
 
-  const result = await db.select().from(users).where(eq(targetid, users.userID))
+  const result = await db
+
+    .select()
+    .from(users)
+    .where(eq(users.userID, targetid));
 
   //no need () to .length. result is an array and if its length is zero then:
-  if(result.length==0){
-    return c.json({message:"User not found"},404)
-  }else{
-    //databse returns an array when you asked for a user. This array consists of only one 
-    // object which is the user information that requested. However we dont give it to the 
-    // frontend as array, we extract the object from array and then give it to frontend. 
-    // this is why result[0] is exists and there is no result[1], databese returns only 
+  if (result.length == 0) {
+    return c.json({ message: "User not found" }, 404);
+  } else {
+    //databse returns an array when you asked for a user. This array consists of only one
+    // object which is the user information that requested. However we dont give it to the
+    // frontend as array, we extract the object from array and then give it to frontend.
+    // this is why result[0] is exists and there is no result[1], databese returns only
     // the requested information inside an array.
-    return c.json(result[0],200)
+    return c.json(result[0], 200);
   }
-})
-
+});
 
 // this is threads section-------------------------------------------------------------
-app.get("/threads", (c)=>{
-  return c.text("This is threads page")
-})
+app.get("/threads", (c) => {
+  return c.text("This is threads page");
+});
 
-app.post("/threads", async(c)=>{
-  const body = await c.req.json()
-  await db.insert(threads).values({threadName:body.threadName})
-  return c.json({message:"Thread Successfully Created"},201)
-})
-
+app.post("/threads", async (c) => {
+  const body = await c.req.json();
+  await db.insert(threads).values({ threadName: body.threadName });
+  return c.json({ message: "Thread Successfully Created" }, 201);
+});
 
 //this is messages section-------------------------------------------------------------
-app.get("/messages", async(c)=>{
-  const allMessages = await db.select().from(messages)
-  return c.json(allMessages)
-})
+app.get("/messages", async (c) => {
+  const allMessages = await db.select().from(messages);
+  return c.json(allMessages);
+});
 
-app.post("/messages", async(c)=>{
-  const body = await c.req.json()
-
+app.post("/messages", async (c) => {
+  const body = await c.req.json();
 
   //destructuring
-  const {contentOfMessage,userID,threadID} = body
+  const { contentOfMessage, userID, threadID } = body;
 
   //error handling
-  if(!contentOfMessage || !userID || !threadID){
-    return c.json({error:"Missing required fields: content, userID, or threadID"},400)
+  if (!contentOfMessage || !userID || !threadID) {
+    return c.json(
+      { error: "Missing required fields: content, userID, or threadID" },
+      400,
+    );
   }
 
   //500 error try-catch block
-  try{
-  //DateTime is luxon object, .now() is to detect exact time when "post" was send, .toUTC() 
-  // is to covert local hour to Z(zulu time UTC+0) and .toISO() converts the data into string 
-  // because sqlite want it as string. 
-  const currentTime = DateTime.now().toUTC().toISO()
-  
-  await db.insert(messages).values({
-    //before destructuring => contentOfMessage: body.contentOfMessage,
-    //if the key and value have the exact same name, then writing only one is
-    //more appropriate than that => contentOfMessage : contentOfMessage,
-    contentOfMessage,
-    //userID: body.userID,
-    userID,
-    //threadID: body.threadID,
-    threadID,
-    sendingTime: currentTime
-  })
-  return c.json({message: "Message Successfully Created"},201)
-    }catch(error){
-  c.json({error:"Internal server error"},500)
-    }
-})
+  try {
+    //DateTime is luxon object, .now() is to detect exact time when "post" was send, .toUTC()
+    // is to covert local hour to Z(zulu time UTC+0) and .toISO() converts the data into string
+    // because sqlite want it as string.
+    const currentTime = DateTime.now().toUTC().toISO();
 
-
+    await db.insert(messages).values({
+      //before destructuring => contentOfMessage: body.contentOfMessage,
+      //if the key and value have the exact same name, then writing only one is
+      //more appropriate than that => contentOfMessage : contentOfMessage,
+      contentOfMessage,
+      //userID: body.userID,
+      userID,
+      //threadID: body.threadID,
+      threadID,
+      sendingTime: currentTime,
+    });
+    return c.json({ message: "Message Successfully Created" }, 201);
+  } catch (error) {
+    c.json({ error: "Internal server error" }, 500);
+  }
+});
 
 // says to bun : app object is the one you should use to listen for web traffic.
 export default app;

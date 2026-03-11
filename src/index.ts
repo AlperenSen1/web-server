@@ -30,10 +30,15 @@ app.get("/users", async (c) => {
   return c.json(allUsers);
 });
 
-app.post("/users", async (c) => {
-  const body = await c.req.json();
-  await db.insert(users).values({ userName: body.userName });
-  return c.json({ message: "User Successfully Created" }, 201);
+const usersSchema = z.object({ userName: z.string().min(1) });
+app.post("/users", zValidator("json", usersSchema), async (c) => {
+  const { userName } = c.req.valid("json");
+  try {
+    await db.insert(users).values({ userName });
+    return c.json({ message: "User Successfully Created" }, 201);
+  } catch (error) {
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
 });
 
 const idSchema = z.object({ id: z.coerce.number().int().positive() });
@@ -55,10 +60,15 @@ app.get("/threads", (c) => {
   return c.text("This is threads page");
 });
 
-app.post("/threads", async (c) => {
-  const body = await c.req.json();
-  await db.insert(threads).values({ threadName: body.threadName });
-  return c.json({ message: "Thread Successfully Created" }, 201);
+const threadsSchema = z.object({ threadName: z.string().min(1) });
+app.post("/threads", zValidator("json", threadsSchema), async (c) => {
+  const { threadName } = c.req.valid("json");
+  try {
+    await db.insert(threads).values({ threadName });
+    return c.json({ message: "Thread Successfully Created" }, 201);
+  } catch (error) {
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
 });
 
 //this is messages section-------------------------------------------------------------

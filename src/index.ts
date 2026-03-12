@@ -25,6 +25,8 @@ app.get("/", (c) => {
   return c.text("This is homepage.");
 });
 
+//"await" pauses the code flow to wait response from db, at this time server can make other tasks through "async".
+// if you use await you must use async
 app.get("/users", async (c) => {
   const allUsers = await db.select().from(users);
   return c.json(allUsers);
@@ -41,17 +43,20 @@ app.post("/users", zValidator("json", usersSchema), async (c) => {
   }
 });
 
+// data that comes from URL variable is string, coerce turns it into number if it is convertable, then
+// number()... and other things are checked.
 const idSchema = z.object({ id: z.coerce.number().int().positive() });
-
 app.get("/users/:id", zValidator("param", idSchema), async (c) => {
   const { id } = c.req.valid("param");
-
-  const result = await db.select().from(users).where(eq(users.userID, id));
-
-  if (result.length == 0) {
-    return c.json({ message: "User not found" }, 404);
-  } else {
-    return c.json(result[0], 200);
+  try {
+    const result = await db.select().from(users).where(eq(users.userID, id));
+    if (result.length == 0) {
+      return c.json({ message: "User not found" }, 404);
+    } else {
+      return c.json(result[0], 200);
+    }
+  } catch (error) {
+    return c.json({ error: "Internal Server Error" }, 500);
   }
 });
 
@@ -77,7 +82,6 @@ app.get("/messages", async (c) => {
   return c.json(allMessages);
 });
 
-// this is zod schema where i define the message sending by user must looks like. it is outside of app.post
 const messageSchema = z.object({
   contentOfMessage: z.string().min(1),
   //you must start with javascript data types(string,number,boolean) when defining rules then add mathematicals

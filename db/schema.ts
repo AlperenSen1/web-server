@@ -8,37 +8,25 @@ export const users = sqliteTable("users", {
   // typescript code (which named as "key") and
   // on the right hand side of : sign, we declared integer("id") then id is the column name
   // in sqlite table.
-  userID: integer("id").primaryKey(),
-  userName: text("userName").notNull(),
+  userID: integer("user_id").primaryKey(),
+  userName: text("user_name").notNull(),
 });
 
 //threads table schema--------
 export const threads = sqliteTable("threads", {
-  threadID: integer("id").primaryKey(),
-  threadName: text("threadName").notNull(),
+  threadID: integer("thread_id").primaryKey(),
+  threadName: text("thread_name").notNull(),
 });
 
 //messages table schema-------
 export const messages = sqliteTable("messages", {
-  messageID: integer("messageID").primaryKey(),
-  contentOfMessage: text("contentOfMessage").notNull(),
-  //if you want to return the exactly same thing which is on the right hand
-  // side of equal(=) sign of arrow function, don't use curly bracket{}.
-
-  //there is no problem if the key of userID column on messages table same
-  //with the key of "id" column on users table. We are going to call them later
-  // seperately such as users.userID and messages.userID that's why there will not
-  //occur any conflict.
-  //.references() function says that: key(userID) from messages table has same values
-  //  with userID key from users table
-  userID: integer("userID")
+  messageID: integer("message_id").primaryKey(),
+  contentOfMessage: text("content_of_message").notNull(),
+  userID: integer("user_id")
     .notNull()
     .references(() => users.userID),
-  threadID: integer("threadID")
+  threadID: integer("thread_id")
     .notNull()
     .references(() => threads.threadID),
-  // dont use space like sending time, use _ instead, like sending_time
-  // there is no timestamp data type(data type is integer,text etc.)on sqlite, instead timestamp
-  //  use text
   sendingTime: text("sending_time").notNull(),
 });

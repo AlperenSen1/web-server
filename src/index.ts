@@ -18,6 +18,11 @@ import { zValidator } from "@hono/zod-validator";
 // Create a Hono class object named app.
 const app = new Hono();
 
+app.onError((err, c) => {
+  console.error(err);
+  return c.json({ error: "Internal Server Error" }, 500);
+});
+
 //this is the homepage section-------------------------------------------------------
 
 //this is route
@@ -35,12 +40,9 @@ app.get("/users", async (c) => {
 const usersSchema = z.object({ userName: z.string().min(1) });
 app.post("/users", zValidator("json", usersSchema), async (c) => {
   const { userName } = c.req.valid("json");
-  try {
-    await db.insert(users).values({ userName });
-    return c.json({ message: "User Successfully Created" }, 201);
-  } catch (error) {
-    return c.json({ error: "Internal Server Error" }, 500);
-  }
+
+  await db.insert(users).values({ userName });
+  return c.json({ message: "User Successfully Created" }, 201);
 });
 
 // data that comes from URL variable is string, coerce turns it into number if it is convertable, then
@@ -48,15 +50,12 @@ app.post("/users", zValidator("json", usersSchema), async (c) => {
 const idSchema = z.object({ id: z.coerce.number().int().positive() });
 app.get("/users/:id", zValidator("param", idSchema), async (c) => {
   const { id } = c.req.valid("param");
-  try {
-    const result = await db.select().from(users).where(eq(users.userID, id));
-    if (result.length == 0) {
-      return c.json({ message: "User not found" }, 404);
-    } else {
-      return c.json(result[0], 200);
-    }
-  } catch (error) {
-    return c.json({ error: "Internal Server Error" }, 500);
+
+  const result = await db.select().from(users).where(eq(users.userID, id));
+  if (result.length == 0) {
+    return c.json({ message: "User not found" }, 404);
+  } else {
+    return c.json(result[0], 200);
   }
 });
 
@@ -68,12 +67,9 @@ app.get("/threads", (c) => {
 const threadsSchema = z.object({ threadName: z.string().min(1) });
 app.post("/threads", zValidator("json", threadsSchema), async (c) => {
   const { threadName } = c.req.valid("json");
-  try {
-    await db.insert(threads).values({ threadName });
-    return c.json({ message: "Thread Successfully Created" }, 201);
-  } catch (error) {
-    return c.json({ error: "Internal Server Error" }, 500);
-  }
+
+  await db.insert(threads).values({ threadName });
+  return c.json({ message: "Thread Successfully Created" }, 201);
 });
 
 //this is messages section-------------------------------------------------------------
@@ -92,19 +88,15 @@ const messageSchema = z.object({
 app.post("/messages", zValidator("json", messageSchema), async (c) => {
   const { contentOfMessage, userID, threadID } = c.req.valid("json");
 
-  try {
-    const currentTime = DateTime.now().toUTC().toISO();
+  const currentTime = DateTime.now().toUTC().toISO();
 
-    await db.insert(messages).values({
-      contentOfMessage,
-      userID,
-      threadID,
-      sendingTime: currentTime,
-    });
-    return c.json({ message: "Message Successfully Created" }, 201);
-  } catch (error) {
-    c.json({ error: "Internal server error" }, 500);
-  }
+  await db.insert(messages).values({
+    contentOfMessage,
+    userID,
+    threadID,
+    sendingTime: currentTime,
+  });
+  return c.json({ message: "Message Successfully Created" }, 201);
 });
 
 // says to bun : app object is the one you should use to listen for web traffic.

@@ -9,8 +9,10 @@ import { Database } from "bun:sqlite";
 // drizzle function translates typescript to sql
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
+import * as schema from "./schema";
+
 //this line exists to find and open the database.sqlite file
 const sqlite = new Database("database.sqlite");
 
 // this line enables me to communicate with databse.sqlite file by using typescript language
-export const db = drizzle(sqlite);
+export const db = drizzle(sqlite, { schema });

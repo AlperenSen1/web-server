@@ -6,10 +6,6 @@ import { Hono } from "hono";
 
 import { db } from "../db";
 import { users, threads, messages } from "../db/schema";
-
-//datetime object from luxon package
-import { DateTime } from "luxon";
-
 //equal
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -22,6 +18,12 @@ app.onError((err, c) => {
   console.error(err);
   return c.json({ error: "Internal Server Error" }, 500);
 });
+
+const validatorHook = (result, c) => {
+  if (!result.success) {
+    return c.json({ error: result.error.issues[0].message }, 400);
+  }
+};
 
 //this is the homepage section-------------------------------------------------------
 
@@ -38,39 +40,52 @@ app.get("/users", async (c) => {
 });
 
 const usersSchema = z.object({ userName: z.string().min(1) });
-app.post("/users", zValidator("json", usersSchema), async (c) => {
-  const { userName } = c.req.valid("json");
+app.post(
+  "/users",
+  zValidator("json", usersSchema, validatorHook),
+  async (c) => {
+    const { userName } = c.req.valid("json");
 
-  await db.insert(users).values({ userName });
-  return c.json({ message: "User Successfully Created" }, 201);
-});
-
-// data that comes from URL variable is string, coerce turns it into number if it is convertable, then
-// number()... and other things are checked.
-const idSchema = z.object({ id: z.coerce.number().int().positive() });
-app.get("/users/:id", zValidator("param", idSchema), async (c) => {
-  const { id } = c.req.valid("param");
-
-  const result = await db.select().from(users).where(eq(users.userID, id));
-  if (result.length == 0) {
-    return c.json({ message: "User not found" }, 404);
-  } else {
-    return c.json(result[0], 200);
+    await db.insert(users).values({ userName });
+    return c.json({ message: "User Successfully Created" }, 201);
   }
-});
+);
+
+const idSchema = z.object({ id: z.string().min(1) });
+app.get(
+  "/users/:id",
+  zValidator("param", idSchema, validatorHook),
+  async (c) => {
+    const { id } = c.req.valid("param");
+
+    const result = await db.query.users.findFirst({
+      where: eq(users.userId, id),
+    });
+    if (!result) {
+      return c.json({ message: "User not found" }, 404);
+    } else {
+      return c.json(result, 200);
+    }
+  }
+);
 
 // this is threads section-------------------------------------------------------------
-app.get("/threads", (c) => {
-  return c.text("This is threads page");
+app.get("/threads", async (c) => {
+  const allThreads = await db.select().from(threads);
+  return c.json(allThreads);
 });
 
 const threadsSchema = z.object({ threadName: z.string().min(1) });
-app.post("/threads", zValidator("json", threadsSchema), async (c) => {
-  const { threadName } = c.req.valid("json");
+app.post(
+  "/threads",
+  zValidator("json", threadsSchema, validatorHook),
+  async (c) => {
+    const { threadName } = c.req.valid("json");
 
-  await db.insert(threads).values({ threadName });
-  return c.json({ message: "Thread Successfully Created" }, 201);
-});
+    await db.insert(threads).values({ threadName });
+    return c.json({ message: "Thread Successfully Created" }, 201);
+  }
+);
 
 //this is messages section-------------------------------------------------------------
 app.get("/messages", async (c) => {
@@ -81,23 +96,36 @@ app.get("/messages", async (c) => {
 const messageSchema = z.object({
   contentOfMessage: z.string().min(1),
   //you must start with javascript data types(string,number,boolean) when defining rules then add mathematicals
-  userID: z.number().int().positive(),
-  threadID: z.number().int().positive(),
+  userId: z.string(),
+  threadId: z.string(),
 });
 
-app.post("/messages", zValidator("json", messageSchema), async (c) => {
-  const { contentOfMessage, userID, threadID } = c.req.valid("json");
+app.post(
+  "/messages",
+  zValidator("json", messageSchema, validatorHook),
+  async (c) => {
+    const { contentOfMessage, userId, threadId } = c.req.valid("json");
+    const userExists = await db.query.users.findFirst({
+      where: eq(users.userId, userId),
+    });
+    if (!userExists) {
+      return c.json({ error: "User not found." }, 404);
+    }
+    const threadExists = await db.query.threads.findFirst({
+      where: eq(threads.threadId, threadId),
+    });
+    if (!threadExists) {
+      return c.json({ error: "Thread not found." }, 404);
+    }
 
-  const currentTime = DateTime.now().toUTC().toISO();
-
-  await db.insert(messages).values({
-    contentOfMessage,
-    userID,
-    threadID,
-    sendingTime: currentTime,
-  });
-  return c.json({ message: "Message Successfully Created" }, 201);
-});
+    await db.insert(messages).values({
+      contentOfMessage,
+      userId,
+      threadId,
+    });
+    return c.json({ message: "Message Successfully Created" }, 201);
+  }
+);
 
 // says to bun : app object is the one you should use to listen for web traffic.
 export default app;

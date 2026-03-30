@@ -4,15 +4,19 @@ import { Hono } from "hono";
 // i wrote ../ at the beginning of the path becasue that ./
 //  means "Look inside my current folder" and  ../ means "go up one level".
 
-import { db } from "../db";
-import { users, threads, messages } from "../db/schema";
+import { db, users, threads, messages } from "@repo/db";
 //equal
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 
+import { Queue } from "bullmq";
+
 // Create a Hono class object named app.
 const app = new Hono();
+
+const connection = { host: process.env.REDIS_HOST || "localhost", port: 6379 };
+const userQueue = new Queue("user-queue", { connection });
 
 app.onError((err, c) => {
   console.error(err);
@@ -46,8 +50,8 @@ app.post(
   async (c) => {
     const { userName } = c.req.valid("json");
 
-    await db.insert(users).values({ userName });
-    return c.json({ message: "User Successfully Created" }, 201);
+    await userQueue.add("createUser", { userName });
+    return c.json({ message: "User creation job added to queue" }, 202);
   }
 );
 

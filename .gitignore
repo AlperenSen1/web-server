@@ -1,3 +1,5 @@
-# deps
 node_modules/
-database.sqlite
+dist/
+.env
+packages/database/database.sqlite
+packages/database/database.sqlite-journal

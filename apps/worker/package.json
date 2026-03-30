@@ -1,0 +1,13 @@
+{
+  "name": "worker",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts"
+  },
+  "dependencies": {
+    "@repo/db": "workspace:*",
+    "bullmq": "^5.71.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

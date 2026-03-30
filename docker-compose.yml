@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:alpine
+    container_name: web-server-redis
+    ports:
+      - "6379:6379"
+
+  app:
+    image: oven/bun:1
+    container_name: web-server-app
+    working_dir: /app
+    # Proje dosyalarını konteynerin içine bağlıyoruz (Volume mapping)
+    volumes:
+      - .:/app
+    # Konteynerin içine ortam değişkeni (environment variable) veriyoruz
+    environment:
+      - REDIS_HOST=redis
+    ports:
+      - "3000:3000"
+    # Konteyner ayağa kalkarken önce paketleri kurup, sonra Turborepo'yu başlatacak
+    command: sh -c "bun install && bun run dev"
+    # Redis ayağa kalkmadan bu servisin başlamasını engelliyoruz
+    depends_on:
+      - redis
